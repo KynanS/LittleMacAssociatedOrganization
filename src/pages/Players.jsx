@@ -20,8 +20,6 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  LineChart,
-  Line,
 } from 'recharts';
 import { loadTournamentData, getUniquePlayers, getUniqueTournaments, filterData } from '../utils/dataLoader';
 import RaceIcon from '../components/RaceIcon';
@@ -80,12 +78,14 @@ function Players() {
       }
     });
 
-    return Object.entries(playerStats).map(([player, stats]) => ({
-      player,
-      winRate: (stats.wins / stats.total) * 100,
-      totalMatches: stats.total,
-      race: stats.race,
-    }));
+    return Object.entries(playerStats)
+      .filter(([_, stats]) => stats.race && ['z', 't', 'p'].includes(stats.race.toLowerCase()))
+      .map(([player, stats]) => ({
+        player,
+        winRate: (stats.wins / stats.total) * 100,
+        totalMatches: stats.total,
+        race: stats.race,
+      }));
   };
 
   const getPlayerMatchupStats = (player) => {
@@ -94,13 +94,17 @@ function Players() {
     filteredData
       .filter(match => match.player === player)
       .forEach(match => {
-        const matchup = `${match.race}v${match.opponentRace}`;
-        if (!matchupStats[matchup]) {
-          matchupStats[matchup] = { wins: 0, total: 0 };
-        }
-        matchupStats[matchup].total++;
-        if (match.result === 'win') {
-          matchupStats[matchup].wins++;
+        if (match.race && match.opponentRace && 
+            ['z', 't', 'p'].includes(match.race.toLowerCase()) && 
+            ['z', 't', 'p'].includes(match.opponentRace.toLowerCase())) {
+          const matchup = `${match.race}v${match.opponentRace}`;
+          if (!matchupStats[matchup]) {
+            matchupStats[matchup] = { wins: 0, total: 0 };
+          }
+          matchupStats[matchup].total++;
+          if (match.result === 'win') {
+            matchupStats[matchup].wins++;
+          }
         }
       });
 
@@ -190,7 +194,7 @@ function Players() {
                         <text x={0} y={0} dy={16} textAnchor="middle" fill="#666">
                           <tspan x={0} dy="0.71em">
                             <Box component="span" sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5 }}>
-                              <RaceIcon race={playerData.race} size={16} />
+                              <RaceIcon race={playerData?.race} size={16} />
                               {payload.value}
                             </Box>
                           </tspan>

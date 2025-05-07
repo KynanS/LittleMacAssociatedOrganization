@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Container, Grid, Paper, Typography, Box, Table, TableBody, TableCell, TableContainer, TableHead, TableRow } from '@mui/material';
 import { loadTournamentData } from '../utils/dataLoader';
-import RaceIcon, { getRaceIcon } from '../components/RaceIcon';
+import RaceIcon from '../components/RaceIcon';
 
 function Home() {
   const [data, setData] = useState([]);
@@ -74,8 +74,7 @@ function Home() {
             gold: stats.gold,
             silver: stats.silver,
             bronze: stats.bronze,
-            race: mostUsedRace,
-            raceIcon: getRaceIcon(mostUsedRace)
+            race: mostUsedRace
           };
         })
         .sort((a, b) => {
@@ -132,21 +131,7 @@ function Home() {
                       <TableCell>{index + 1}</TableCell>
                       <TableCell>{player.player}</TableCell>
                       <TableCell align="center">
-                        {player.raceIcon ? (
-                          <Box
-                            component="img"
-                            src={player.raceIcon}
-                            alt={player.race}
-                            sx={{
-                              width: 24,
-                              height: 24,
-                              objectFit: 'contain',
-                              verticalAlign: 'middle',
-                            }}
-                          />
-                        ) : (
-                          <Typography variant="body2">{player.race}</Typography>
-                        )}
+                        <RaceIcon race={player.race} size={24} />
                       </TableCell>
                       <TableCell align="center">{player.gold}</TableCell>
                       <TableCell align="center">{player.silver}</TableCell>

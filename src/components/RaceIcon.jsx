@@ -1,21 +1,17 @@
 import { Box, Typography } from '@mui/material';
+import zergIcon from '../assets/race-icons/zerg.png';
+import terranIcon from '../assets/race-icons/terran.png';
+import protossIcon from '../assets/race-icons/protoss.png';
 
 export const getRaceIcon = (raceCode) => {
-  // Map single-letter race codes to full race names
+  // Map single-letter race codes to image imports
   const raceMap = {
-    'z': 'zerg',
-    't': 'terran',
-    'p': 'protoss'
+    'z': zergIcon,
+    't': terranIcon,
+    'p': protossIcon
   };
 
-  const raceName = raceMap[raceCode.toLowerCase()];
-  if (!raceName) return null;
-
-  try {
-    return require(`../assets/race-icons/${raceName}.png`);
-  } catch (error) {
-    return null;
-  }
+  return raceMap[raceCode.toLowerCase()] || null;
 };
 
 const RaceIcon = ({ race, size = 24 }) => {

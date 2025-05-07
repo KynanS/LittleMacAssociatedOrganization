@@ -27,7 +27,37 @@ import {
 import { loadTournamentData, getUniqueTournaments, getUniquePlayers, getUniqueRaces, filterData } from '../utils/dataLoader';
 import RaceIcon from '../components/RaceIcon';
 
-const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
+const COLORS = {
+  'p': '#FFD700', // Yellow for Protoss
+  't': '#1E90FF', // Blue for Terran
+  'z': '#9370DB', // Purple for Zerg
+};
+
+const RACE_NAMES = {
+  'p': 'Protoss',
+  't': 'Terran',
+  'z': 'Zerg'
+};
+
+const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent, index, name, value }) => {
+  const RADIAN = Math.PI / 180;
+  const radius = outerRadius + 20;
+  const x = cx + radius * Math.cos(-midAngle * RADIAN);
+  const y = cy + radius * Math.sin(-midAngle * RADIAN);
+
+  return (
+    <text
+      x={x}
+      y={y}
+      fill={COLORS[name.toLowerCase()]}
+      textAnchor={x > cx ? 'start' : 'end'}
+      dominantBaseline="central"
+      fontWeight="bold"
+    >
+      {value}
+    </text>
+  );
+};
 
 function Tournaments() {
   const [data, setData] = useState([]);
@@ -46,9 +76,17 @@ function Tournaments() {
       const tournamentData = await loadTournamentData();
       setData(tournamentData);
       setFilteredData(tournamentData);
-      setTournaments(getUniqueTournaments(tournamentData).sort());
+      
+      // Sort tournaments numerically
+      const sortedTournaments = getUniqueTournaments(tournamentData)
+        .sort((a, b) => parseInt(a) - parseInt(b));
+      setTournaments(sortedTournaments);
+      
       setPlayers(getUniquePlayers(tournamentData).sort());
-      setRaces(getUniqueRaces(tournamentData).sort());
+      const validRaces = getUniqueRaces(tournamentData)
+        .filter(race => race && ['z', 't', 'p'].includes(race.toLowerCase()))
+        .sort();
+      setRaces(validRaces);
     };
 
     fetchData();
@@ -66,28 +104,91 @@ function Tournaments() {
   };
 
   const getRaceDistribution = () => {
-    const raceCounts = filteredData.reduce((acc, match) => {
-      acc[match.race] = (acc[match.race] || 0) + 1;
-      return acc;
-    }, {});
+    // Get matches for selected tournaments
+    const tournamentMatches = filters.tournaments.length > 0
+      ? data.filter(match => filters.tournaments.includes(match.tournament))
+      : data;
 
-    return Object.entries(raceCounts).map(([race, count]) => ({
-      name: race,
-      value: count
-    }));
+    // Get unique players and their races from the tournament matches
+    const playerRaces = new Map();
+    
+    tournamentMatches.forEach(match => {
+      // Process Player 1
+      if (match.player && match.race) {
+        const playerName = match.player;
+        const race = match.race.toLowerCase();
+        
+        if (!playerRaces.has(playerName)) {
+          playerRaces.set(playerName, { 'p': 0, 't': 0, 'z': 0 });
+        }
+        const races = playerRaces.get(playerName);
+        if (['p', 't', 'z'].includes(race)) {
+          races[race]++;
+        }
+      }
+
+      // Process Player 2
+      if (match.opponent && match.opponentRace) {
+        const playerName = match.opponent;
+        const race = match.opponentRace.toLowerCase();
+        
+        if (!playerRaces.has(playerName)) {
+          playerRaces.set(playerName, { 'p': 0, 't': 0, 'z': 0 });
+        }
+        const races = playerRaces.get(playerName);
+        if (['p', 't', 'z'].includes(race)) {
+          races[race]++;
+        }
+      }
+    });
+
+    // Count players by their main race
+    const raceCounts = {
+      'p': 0,
+      't': 0,
+      'z': 0
+    };
+
+    playerRaces.forEach((races, playerName) => {
+      const mainRace = Object.entries(races)
+        .sort((a, b) => b[1] - a[1])[0]?.[0];
+      
+      if (mainRace) {
+        raceCounts[mainRace]++;
+      }
+    });
+
+    return Object.entries(raceCounts)
+      .filter(([_, count]) => count > 0)
+      .map(([race, count]) => ({
+        name: race,
+        value: count
+      }));
+  };
+
+  const normalizeMatchup = (race1, race2) => {
+    const [r1, r2] = [race1.toLowerCase(), race2.toLowerCase()].sort();
+    return `${r1}v${r2}`;
   };
 
   const getMatchupStats = () => {
-    const matchups = filteredData.reduce((acc, match) => {
-      const matchup = `${match.race}v${match.opponentRace}`;
-      acc[matchup] = (acc[matchup] || 0) + 1;
-      return acc;
-    }, {});
+    const matchups = {};
+    
+    filteredData.forEach(match => {
+      if (match.race && match.opponentRace && 
+          ['z', 't', 'p'].includes(match.race.toLowerCase()) && 
+          ['z', 't', 'p'].includes(match.opponentRace.toLowerCase())) {
+        const matchup = normalizeMatchup(match.race, match.opponentRace);
+        matchups[matchup] = (matchups[matchup] || 0) + 1;
+      }
+    });
 
-    return Object.entries(matchups).map(([matchup, count]) => ({
-      matchup,
-      count
-    }));
+    return Object.entries(matchups)
+      .map(([matchup, count]) => ({
+        matchup,
+        count
+      }))
+      .sort((a, b) => a.matchup.localeCompare(b.matchup));
   };
 
   return (
@@ -188,7 +289,7 @@ function Tournaments() {
       {/* Charts */}
       <Grid container spacing={3}>
         <Grid item xs={12} md={6}>
-          <Paper sx={{ p: 2, display: 'flex', flexDirection: 'column', height: 400 }}>
+          <Paper sx={{ p: 2, display: 'flex', flexDirection: 'column', height: 400, pb: 4 }}>
             <Typography variant="h6" gutterBottom>
               Race Distribution
             </Typography>
@@ -200,16 +301,18 @@ function Tournaments() {
                   nameKey="name"
                   cx="50%"
                   cy="50%"
-                  outerRadius={150}
-                  label
+                  outerRadius={130}
+                  label={renderCustomizedLabel}
                 >
-                  {getRaceDistribution().map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]}>
+                  {getRaceDistribution().map((entry) => (
+                    <Cell key={`cell-${entry.name}`} fill={COLORS[entry.name.toLowerCase()]}>
                       <RaceIcon race={entry.name} size={16} />
                     </Cell>
                   ))}
                 </Pie>
-                <Tooltip />
+                <Tooltip 
+                  formatter={(value, name) => [value, RACE_NAMES[name.toLowerCase()]]}
+                />
               </PieChart>
             </ResponsiveContainer>
           </Paper>
