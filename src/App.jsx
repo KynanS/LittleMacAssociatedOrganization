@@ -5,6 +5,7 @@ import Navbar from './components/Navbar';
 import Home from './pages/Home';
 import Tournaments from './pages/Tournaments';
 import Players from './pages/Players';
+import ErrorBoundary from './components/ErrorBoundary';
 
 const darkTheme = createTheme({
   palette: {
@@ -34,18 +35,22 @@ const darkTheme = createTheme({
 });
 
 function App() {
+  const basename = import.meta.env.PROD ? '/LittleMacAssociatedOrganization' : '/';
+  
   return (
-    <ThemeProvider theme={darkTheme}>
-      <CssBaseline />
-      <Router basename={import.meta.env.PROD ? '/LittleMacAssociatedOrganization' : '/'}>
-        <Navbar />
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/tournaments" element={<Tournaments />} />
-          <Route path="/players" element={<Players />} />
-        </Routes>
-      </Router>
-    </ThemeProvider>
+    <ErrorBoundary>
+      <ThemeProvider theme={darkTheme}>
+        <CssBaseline />
+        <Router basename={basename}>
+          <Navbar />
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/tournaments" element={<Tournaments />} />
+            <Route path="/players" element={<Players />} />
+          </Routes>
+        </Router>
+      </ThemeProvider>
+    </ErrorBoundary>
   );
 }
 

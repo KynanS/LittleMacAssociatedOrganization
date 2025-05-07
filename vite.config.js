@@ -17,5 +17,8 @@ export default defineConfig({
   },
   server: {
     port: 3000
+  },
+  define: {
+    'import.meta.env.PROD': JSON.stringify(true)
   }
 }) 
