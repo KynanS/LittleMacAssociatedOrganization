@@ -10,8 +10,8 @@ export default defineConfig({
     assetsDir: 'assets',
     sourcemap: true,
     rollupOptions: {
-      input: {
-        main: './index.html'
+      output: {
+        manualChunks: undefined
       }
     }
   },
@@ -19,6 +19,6 @@ export default defineConfig({
     port: 3000
   },
   define: {
-    'import.meta.env.PROD': JSON.stringify(true)
+    'import.meta.env.PROD': true
   }
 }) 
