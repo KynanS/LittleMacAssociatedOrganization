@@ -10,8 +10,8 @@ export default defineConfig({
     assetsDir: 'assets',
     sourcemap: true,
     rollupOptions: {
-      output: {
-        manualChunks: undefined
+      input: {
+        main: './index.html'
       }
     }
   },
