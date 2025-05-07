@@ -23,17 +23,5 @@
   <body>
     <div id="root"></div>
     <script type="module" src="./src/main.jsx"></script>
-    <script>
-      // Add a fallback script loader
-      window.addEventListener('error', function(e) {
-        if (e.target.tagName === 'SCRIPT' && e.target.src.includes('main.jsx')) {
-          console.log('Script load failed, trying alternative path...');
-          const script = document.createElement('script');
-          script.type = 'module';
-          script.src = './assets/main.js';
-          document.body.appendChild(script);
-        }
-      }, true);
-    </script>
   </body>
 </html> 
