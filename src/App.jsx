@@ -37,7 +37,7 @@ function App() {
   return (
     <ThemeProvider theme={darkTheme}>
       <CssBaseline />
-      <Router>
+      <Router basename={import.meta.env.PROD ? '/LittleMacAssociatedOrganization' : '/'}>
         <Navbar />
         <Routes>
           <Route path="/" element={<Home />} />
